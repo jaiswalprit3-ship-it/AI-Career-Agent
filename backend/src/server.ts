@@ -69,7 +69,7 @@ const PORT = process.env.PORT || 3000;
 const allowedOrigins = [
   'http://localhost:5173',
   process.env.CORS_ORIGIN,
-].filter(Boolean);
+].filter((origin): origin is string => Boolean(origin));
 
 app.use(
   cors({
