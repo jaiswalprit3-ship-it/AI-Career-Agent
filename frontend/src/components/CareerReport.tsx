@@ -79,7 +79,9 @@ export default function CareerReport({ report, onNewAnalysis }: CareerReportProp
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+      
+      <div id="career-report-root">
+        <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Hero Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
