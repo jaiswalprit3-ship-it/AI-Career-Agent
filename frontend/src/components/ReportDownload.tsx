@@ -157,28 +157,72 @@
 import { X } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { CareerReport as CareerReportType } from '../types';
 
 interface ReportDownloadProps {
-  report: CareerReportType;
   onClose: () => void;
 }
 
 export default function ReportDownload({ onClose }: ReportDownloadProps) {
   const generatePDF = async () => {
     const reportElement = document.getElementById('career-report-root');
+    const explainabilitySection = document.getElementById('ai-explainability-section');
 
     if (!reportElement) {
       alert('Report content not found');
       return;
     }
 
+    // 🔹 Hide explainability only for PDF
+    if (explainabilitySection) {
+      explainabilitySection.style.display = 'none';
+    }
+
+    // 🔹 Inject PDF-only style fixes
+    const style = document.createElement('style');
+    style.innerHTML = `
+      #career-report-root {
+        padding: 24px !important;
+        font-size: 15px !important;
+        line-height: 1.6 !important;
+      }
+
+      #career-report-root svg {
+        vertical-align: middle !important;
+        margin-top: -2px;
+      }
+
+      #career-report-root .flex.items-center {
+        align-items: center !important;
+        gap: 6px !important;
+      }
+
+      #career-report-root h1 {
+        font-size: 32px !important;
+      }
+
+      #career-report-root h2 {
+        font-size: 22px !important;
+      }
+
+      #career-report-root h3 {
+        font-size: 18px !important;
+      }
+    `;
+    document.head.appendChild(style);
+
     const canvas = await html2canvas(reportElement, {
-      scale: 2,
+      scale: 2.4, // 🔥 Improves text clarity
       useCORS: true,
       backgroundColor: '#ffffff',
       scrollY: -window.scrollY,
+      windowWidth: reportElement.scrollWidth,
     });
+
+    // 🔹 Cleanup styles
+    document.head.removeChild(style);
+    if (explainabilitySection) {
+      explainabilitySection.style.display = '';
+    }
 
     const imgData = canvas.toDataURL('image/png');
 
@@ -186,22 +230,20 @@ export default function ReportDownload({ onClose }: ReportDownloadProps) {
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
 
-    const marginTop = 10;
-    const imgWidth = pageWidth;
+    const margin = 12;
+    const imgWidth = pageWidth - margin * 2;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
     let heightLeft = imgHeight;
-    let position = marginTop;
+    let position = margin;
 
-    // First page
-    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+    pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
     heightLeft -= pageHeight;
 
-    // Extra pages
     while (heightLeft > 0) {
-      position = heightLeft - imgHeight + marginTop;
+      position = heightLeft - imgHeight + margin;
       pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
     }
 
