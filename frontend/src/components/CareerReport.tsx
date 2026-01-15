@@ -369,7 +369,8 @@ export default function CareerReport({ report, onNewAnalysis }: CareerReportProp
           </AgentCard>
         </motion.section>
       </div>
-
+    </div>
+      
       {showDownload && (
         <ReportDownload report={report} onClose={() => setShowDownload(false)} />
       )}
