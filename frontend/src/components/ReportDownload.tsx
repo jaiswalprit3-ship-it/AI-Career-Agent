@@ -154,7 +154,6 @@
 // }
 // PDF generation updated to match web UI
 
-
 import { X } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -174,9 +173,8 @@ export default function ReportDownload({ onClose }: ReportDownloadProps) {
       return;
     }
 
-    // Capture UI as canvas
     const canvas = await html2canvas(reportElement, {
-      scale: 2, // improves quality
+      scale: 2,
       useCORS: true,
       backgroundColor: '#ffffff',
       scrollY: -window.scrollY,
@@ -188,19 +186,20 @@ export default function ReportDownload({ onClose }: ReportDownloadProps) {
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
 
+    const marginTop = 10;
     const imgWidth = pageWidth;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
     let heightLeft = imgHeight;
-    let position = 0;
+    let position = marginTop;
 
     // First page
     pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
     heightLeft -= pageHeight;
 
-    // Additional pages if needed
+    // Extra pages
     while (heightLeft > 0) {
-      position = heightLeft - imgHeight;
+      position = heightLeft - imgHeight + marginTop;
       pdf.addPage();
       pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
@@ -245,4 +244,3 @@ export default function ReportDownload({ onClose }: ReportDownloadProps) {
     </div>
   );
 }
-
