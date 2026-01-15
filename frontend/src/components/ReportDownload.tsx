@@ -64,7 +64,7 @@
 //     checkPageBreak(30);
 //     doc.setFontSize(16);
 //     doc.text('Skill Gap Analysis', 20, yPosition);
-//     yPosition += 10;
+//     yPosition  += 10;
 //     doc.setFontSize(12);
 //     doc.text(`Current Level: ${report.skill_gap_analysis.current_skill_level}`, 20, yPosition);
 //     yPosition += 8;
