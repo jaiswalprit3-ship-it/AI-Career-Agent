@@ -53,7 +53,6 @@
 //     console.warn('   Data will be lost on server restart. For production, set up Supabase.');
 //   }
 // });
-
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -65,18 +64,24 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ===== CORS CONFIG (FIXED) =====
+// ===== CORS CONFIG (FIXED & CORRECT) =====
 const allowedOrigins = [
   'http://localhost:5173',
   process.env.CORS_ORIGIN,
 ].filter((origin): origin is string => Boolean(origin));
 
-app.use(
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-  })
-);
+const corsOptions: cors.CorsOptions = {
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
+// 👇 handle preflight requests (VERY IMPORTANT)
+app.options('*', cors(corsOptions));
+
+// 👇 apply CORS before all routes
+app.use(cors(corsOptions));
 
 // ===== MIDDLEWARE =====
 app.use(express.json());
@@ -110,12 +115,9 @@ app.listen(PORT, () => {
 
   if (!process.env.OPENROUTER_API_KEY) {
     console.warn('⚠️  WARNING: OPENROUTER_API_KEY is not set. AI features will not work.');
-    console.warn('   Please create a .env file with your OpenRouter API key.');
-    console.warn('   Get your API key from: https://openrouter.ai/keys');
   }
 
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
     console.warn('⚠️  WARNING: Supabase credentials are not set. Using in-memory storage.');
-    console.warn('   Data will be lost on server restart. For production, set up Supabase.');
   }
 });
