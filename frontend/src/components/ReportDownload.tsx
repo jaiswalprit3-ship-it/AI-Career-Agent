@@ -152,6 +152,8 @@
 //     </div>
 //   );
 // }
+// PDF generation updated to match web UI
+
 
 import { X } from 'lucide-react';
 import html2canvas from 'html2canvas';
