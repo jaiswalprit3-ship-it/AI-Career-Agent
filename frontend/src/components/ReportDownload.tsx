@@ -1,5 +1,5 @@
 // import { jsPDF } from 'jspdf';
-// import { X } from 'lucide-react';
+// import { X }  rom 'lucide-react';
 // import { CareerReport as CareerReportType } from '../types';
 // import { formatCurrency, formatDate } from '../utils/helpers';
 
