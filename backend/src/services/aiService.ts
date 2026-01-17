@@ -101,6 +101,10 @@
 // }
 
 
+
+
+
+
 // import OpenAI from 'openai';
 // import dotenv from 'dotenv';
 
@@ -164,6 +168,7 @@
 //       model: DEFAULT_MODEL,
 //       messages,
 //       temperature,
+//       max_tokens: 3000, 
 //     });
 
 //     const content = response.choices[0]?.message?.content;
@@ -172,8 +177,14 @@
 //       throw new Error('Empty AI response');
 //     }
 
-//     // Your agents already ask for JSON → parse safely
-//     const parsed = JSON.parse(content) as T;
+//     // ✅ SAFE JSON PARSING (FIXES YOUR 500 ERROR)
+//     let parsed: T;
+//     try {
+//       parsed = JSON.parse(content);
+//     } catch (err) {
+//       console.error('AI returned invalid JSON:', content);
+//       throw new Error('AI returned malformed JSON');
+//     }
 
 //     return {
 //       data: parsed,
@@ -206,7 +217,9 @@
 //     } catch (err) {
 //       lastError = err instanceof Error ? err : new Error('Unknown error');
 //       if (attempt < maxRetries) {
-//         await new Promise(r => setTimeout(r, 2 ** attempt * 1000));
+//         await new Promise(resolve =>
+//           setTimeout(resolve, Math.pow(2, attempt) * 1000)
+//         );
 //       }
 //     }
 //   }
@@ -216,14 +229,13 @@
 
 
 
+
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 const DEFAULT_TEMPERATURE = 0.3;
-
-// ✅ Use a real OpenRouter-supported model
 const DEFAULT_MODEL =
   process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini';
 
@@ -241,7 +253,6 @@ function getOpenRouterClient(): OpenAI {
       apiKey,
       baseURL: 'https://openrouter.ai/api/v1',
       defaultHeaders: {
-        // 🔥 REQUIRED BY OPENROUTER
         'HTTP-Referer': 'https://ai-career-agent-p8kj.vercel.app',
         'X-Title': 'AI Career Agent',
       },
@@ -257,6 +268,20 @@ export interface AIResponse<T> {
     completion_tokens: number;
     total_tokens: number;
   };
+}
+
+/**
+ * 🔧 Cleans AI response so JSON.parse NEVER fails
+ */
+function extractJSON(content: string): string {
+  let cleaned = content.trim();
+
+  // Remove ```json and ``` wrappers if present
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+  }
+
+  return cleaned;
 }
 
 export async function callAI<T>(
@@ -279,21 +304,21 @@ export async function callAI<T>(
       model: DEFAULT_MODEL,
       messages,
       temperature,
-      max_tokens: 3000, 
     });
 
-    const content = response.choices[0]?.message?.content;
+    const rawContent = response.choices[0]?.message?.content;
 
-    if (!content) {
+    if (!rawContent) {
       throw new Error('Empty AI response');
     }
 
-    // ✅ SAFE JSON PARSING (FIXES YOUR 500 ERROR)
+    const cleanedJSON = extractJSON(rawContent);
+
     let parsed: T;
     try {
-      parsed = JSON.parse(content);
+      parsed = JSON.parse(cleanedJSON);
     } catch (err) {
-      console.error('AI returned invalid JSON:', content);
+      console.error('AI returned invalid JSON:', rawContent);
       throw new Error('AI returned malformed JSON');
     }
 
@@ -328,13 +353,10 @@ export async function callAIWithRetry<T>(
     } catch (err) {
       lastError = err instanceof Error ? err : new Error('Unknown error');
       if (attempt < maxRetries) {
-        await new Promise(resolve =>
-          setTimeout(resolve, Math.pow(2, attempt) * 1000)
-        );
+        await new Promise(r => setTimeout(r, 2 ** attempt * 1000));
       }
     }
   }
 
   throw lastError!;
 }
-
