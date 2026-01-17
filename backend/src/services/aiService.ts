@@ -304,6 +304,7 @@ export async function callAI<T>(
       model: DEFAULT_MODEL,
       messages,
       temperature,
+      max_tokens: 6000
     });
 
     const rawContent = response.choices[0]?.message?.content;
