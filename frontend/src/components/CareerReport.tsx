@@ -372,8 +372,9 @@ export default function CareerReport({ report, onNewAnalysis }: CareerReportProp
     </div>
       
       {showDownload && (
-        <ReportDownload report={report} onClose={() => setShowDownload(false)} />
+        <ReportDownload onClose={() => setShowDownload(false)} />
       )}
+
       {showShare && (
         <ShareReport report={report} onClose={() => setShowShare(false)} />
       )}
