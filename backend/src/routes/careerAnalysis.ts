@@ -18,7 +18,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 // Upload resume and create session
 router.post(
   '/upload-resume',
-  upload.single('resume'),
+  upload.single('resume') as express.RequestHandler,
   asyncHandler(async (req, res) => {
     if (!req.file) {
       throw createError('No file uploaded', 400);
