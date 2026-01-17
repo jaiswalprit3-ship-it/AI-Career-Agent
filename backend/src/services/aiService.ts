@@ -101,6 +101,121 @@
 // }
 
 
+// import OpenAI from 'openai';
+// import dotenv from 'dotenv';
+
+// dotenv.config();
+
+// const DEFAULT_TEMPERATURE = 0.3;
+
+// // ✅ Use a real OpenRouter-supported model
+// const DEFAULT_MODEL =
+//   process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini';
+
+// let openrouterInstance: OpenAI | null = null;
+
+// function getOpenRouterClient(): OpenAI {
+//   if (!openrouterInstance) {
+//     const apiKey = process.env.OPENROUTER_API_KEY;
+
+//     if (!apiKey) {
+//       throw new Error('OPENROUTER_API_KEY is missing');
+//     }
+
+//     openrouterInstance = new OpenAI({
+//       apiKey,
+//       baseURL: 'https://openrouter.ai/api/v1',
+//       defaultHeaders: {
+//         // 🔥 REQUIRED BY OPENROUTER
+//         'HTTP-Referer': 'https://ai-career-agent-p8kj.vercel.app',
+//         'X-Title': 'AI Career Agent',
+//       },
+//     });
+//   }
+//   return openrouterInstance;
+// }
+
+// export interface AIResponse<T> {
+//   data: T;
+//   usage?: {
+//     prompt_tokens: number;
+//     completion_tokens: number;
+//     total_tokens: number;
+//   };
+// }
+
+// export async function callAI<T>(
+//   prompt: string,
+//   systemPrompt?: string,
+//   temperature: number = DEFAULT_TEMPERATURE
+// ): Promise<AIResponse<T>> {
+//   try {
+//     const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
+
+//     if (systemPrompt) {
+//       messages.push({ role: 'system', content: systemPrompt });
+//     }
+
+//     messages.push({ role: 'user', content: prompt });
+
+//     const openai = getOpenRouterClient();
+
+//     const response = await openai.chat.completions.create({
+//       model: DEFAULT_MODEL,
+//       messages,
+//       temperature,
+//     });
+
+//     const content = response.choices[0]?.message?.content;
+
+//     if (!content) {
+//       throw new Error('Empty AI response');
+//     }
+
+//     // Your agents already ask for JSON → parse safely
+//     const parsed = JSON.parse(content) as T;
+
+//     return {
+//       data: parsed,
+//       usage: response.usage
+//         ? {
+//             prompt_tokens: response.usage.prompt_tokens ?? 0,
+//             completion_tokens: response.usage.completion_tokens ?? 0,
+//             total_tokens: response.usage.total_tokens ?? 0,
+//           }
+//         : undefined,
+//     };
+//   } catch (error) {
+//     console.error('AI API Error:', error);
+//     throw new Error(
+//       `AI service error: ${error instanceof Error ? error.message : 'Unknown'}`
+//     );
+//   }
+// }
+
+// export async function callAIWithRetry<T>(
+//   prompt: string,
+//   systemPrompt?: string,
+//   maxRetries = 3
+// ): Promise<AIResponse<T>> {
+//   let lastError: Error | null = null;
+
+//   for (let attempt = 1; attempt <= maxRetries; attempt++) {
+//     try {
+//       return await callAI<T>(prompt, systemPrompt);
+//     } catch (err) {
+//       lastError = err instanceof Error ? err : new Error('Unknown error');
+//       if (attempt < maxRetries) {
+//         await new Promise(r => setTimeout(r, 2 ** attempt * 1000));
+//       }
+//     }
+//   }
+
+//   throw lastError!;
+// }
+
+
+
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
 
@@ -172,8 +287,14 @@ export async function callAI<T>(
       throw new Error('Empty AI response');
     }
 
-    // Your agents already ask for JSON → parse safely
-    const parsed = JSON.parse(content) as T;
+    // ✅ SAFE JSON PARSING (FIXES YOUR 500 ERROR)
+    let parsed: T;
+    try {
+      parsed = JSON.parse(content);
+    } catch (err) {
+      console.error('AI returned invalid JSON:', content);
+      throw new Error('AI returned malformed JSON');
+    }
 
     return {
       data: parsed,
@@ -206,10 +327,13 @@ export async function callAIWithRetry<T>(
     } catch (err) {
       lastError = err instanceof Error ? err : new Error('Unknown error');
       if (attempt < maxRetries) {
-        await new Promise(r => setTimeout(r, 2 ** attempt * 1000));
+        await new Promise(resolve =>
+          setTimeout(resolve, Math.pow(2, attempt) * 1000)
+        );
       }
     }
   }
 
   throw lastError!;
 }
+
